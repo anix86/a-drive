@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - DATABASE_PATH=/app/storage/database/database.db
+      - ROOT_DIRECTORY=/app/storage/files
+      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+      - MAX_FILE_SIZE=104857600
+      - ALLOWED_FILE_TYPES=*
+      - PORT=8080
+    volumes:
+      - ./storage:/app/storage
+    networks:
+      - a-drive-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8080
+    depends_on:
+      - backend
+    networks:
+      - a-drive-network
+
+networks:
+  a-drive-network:
+    driver: bridge
+
+volumes:
+  storage-data:
