@@ -19,6 +19,7 @@ type File struct {
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`
 	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"`
+	IsFavorite   bool           `json:"is_favorite" gorm:"-"`
 	
 	User     User          `json:"user,omitempty" gorm:"foreignKey:UserID"`
 	Folder   *Folder       `json:"folder,omitempty" gorm:"foreignKey:FolderID"`

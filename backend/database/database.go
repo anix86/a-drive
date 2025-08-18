@@ -47,6 +47,8 @@ func migrate(db *gorm.DB) error {
 		&models.FileVersion{},
 		&models.FileShare{},
 		&models.ShareAccess{},
+		&models.Favorite{},
+		&models.RecentAccess{},
 	)
 }
 

@@ -48,6 +48,8 @@ func main() {
 	apiRoutes.Use(middleware.AuthMiddleware())
 	routes.SetupFileRoutes(apiRoutes)
 	routes.SetupFolderRoutes(apiRoutes)
+	routes.SetupFavoriteRoutes(apiRoutes)
+	routes.SetupRecentFilesRoutes(apiRoutes)
 	routes.SetupProtectedAuthRoutes(apiRoutes)
 	routes.SetupAnalyticsRoutes(apiRoutes)
 	routes.SetupSharingRoutes(apiRoutes)

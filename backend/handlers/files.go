@@ -51,6 +51,21 @@ func ListFiles(c *gin.Context) {
 		return
 	}
 	
+	// Add favorite status to folders and files
+	for i := range folders {
+		var favorite models.Favorite
+		if err := db.Where("user_id = ? AND item_type = ? AND item_id = ?", userID, "folder", folders[i].ID).First(&favorite).Error; err == nil {
+			folders[i].IsFavorite = true
+		}
+	}
+	
+	for i := range files {
+		var favorite models.Favorite
+		if err := db.Where("user_id = ? AND item_type = ? AND item_id = ?", userID, "file", files[i].ID).First(&favorite).Error; err == nil {
+			files[i].IsFavorite = true
+		}
+	}
+	
 	c.JSON(http.StatusOK, gin.H{
 		"folders": folders,
 		"files":   files,
@@ -185,4 +200,34 @@ func RenameFile(c *gin.Context) {
 	}
 	
 	c.JSON(http.StatusOK, gin.H{"file": file})
+}
+
+// GetPhotos returns all image files for the authenticated user
+func GetPhotos(c *gin.Context) {
+	db := c.MustGet("db").(*gorm.DB)
+	userID := c.MustGet("user_id").(uint)
+
+	var files []models.File
+	
+	// Query for files with image MIME types
+	if err := db.Where("user_id = ? AND mime_type LIKE ?", userID, "image/%").
+		Order("created_at DESC").
+		Find(&files).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch photos"})
+		return
+	}
+
+	// Check favorite status for each file
+	for i := range files {
+		var favorite models.Favorite
+		if err := db.Where("user_id = ? AND item_type = ? AND item_id = ?", 
+			userID, "file", files[i].ID).First(&favorite).Error; err == nil {
+			files[i].IsFavorite = true
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"files": files,
+		"count": len(files),
+	})
 }

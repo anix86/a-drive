@@ -20,9 +20,10 @@ func CreateFolder(c *gin.Context) {
 	userID := c.MustGet("user_id").(uint)
 	
 	var req struct {
-		Name     string `json:"name" binding:"required"`
-		ParentID *uint  `json:"parent_id"`
-		IconType string `json:"icon_type"`
+		Name      string `json:"name" binding:"required"`
+		ParentID  *uint  `json:"parent_id"`
+		IconType  string `json:"icon_type"`
+		IconColor string `json:"icon_color"`
 	}
 	
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -32,6 +33,10 @@ func CreateFolder(c *gin.Context) {
 	
 	if req.IconType == "" {
 		req.IconType = "folder"
+	}
+	
+	if req.IconColor == "" {
+		req.IconColor = "text-blue-500"
 	}
 	
 	var path string
@@ -47,11 +52,12 @@ func CreateFolder(c *gin.Context) {
 	}
 	
 	folder := models.Folder{
-		Name:     req.Name,
-		ParentID: req.ParentID,
-		UserID:   userID,
-		IconType: req.IconType,
-		Path:     path,
+		Name:      req.Name,
+		ParentID:  req.ParentID,
+		UserID:    userID,
+		IconType:  req.IconType,
+		IconColor: req.IconColor,
+		Path:      path,
 	}
 	
 	if err := db.Create(&folder).Error; err != nil {
@@ -151,8 +157,9 @@ func UpdateFolder(c *gin.Context) {
 	folderID := c.Param("id")
 	
 	var req struct {
-		Name     string `json:"name"`
-		IconType string `json:"icon_type"`
+		Name      string `json:"name"`
+		IconType  string `json:"icon_type"`
+		IconColor string `json:"icon_color"`
 	}
 	
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -184,6 +191,10 @@ func UpdateFolder(c *gin.Context) {
 	
 	if req.IconType != "" {
 		folder.IconType = req.IconType
+	}
+	
+	if req.IconColor != "" {
+		folder.IconColor = req.IconColor
 	}
 	
 	if err := db.Save(&folder).Error; err != nil {
