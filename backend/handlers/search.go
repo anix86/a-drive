@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -14,6 +15,37 @@ type SearchResult struct {
 	Files   []models.File   `json:"files"`
 	Folders []models.Folder `json:"folders"`
 	Total   int             `json:"total"`
+}
+
+// processWildcardQuery converts wildcard patterns to SQL LIKE patterns
+func processWildcardQuery(query string) (string, bool) {
+	// Check if query contains wildcard characters
+	if !strings.Contains(query, "*") && !strings.Contains(query, "?") {
+		return query, false
+	}
+	
+	// Escape existing SQL special characters
+	escaped := strings.ReplaceAll(query, "%", "\\%")
+	escaped = strings.ReplaceAll(escaped, "_", "\\_")
+	
+	// Convert wildcard patterns to SQL LIKE patterns
+	// * matches any sequence of characters (including empty)
+	// ? matches any single character
+	escaped = strings.ReplaceAll(escaped, "*", "%")
+	escaped = strings.ReplaceAll(escaped, "?", "_")
+	
+	return escaped, true
+}
+
+// isExtensionPattern checks if query is an extension pattern like *.pdf
+func isExtensionPattern(query string) (string, bool) {
+	// Match patterns like *.ext
+	re := regexp.MustCompile(`^\*\.([a-zA-Z0-9]+)$`)
+	matches := re.FindStringSubmatch(query)
+	if len(matches) == 2 {
+		return strings.ToLower(matches[1]), true
+	}
+	return "", false
 }
 
 func SearchFiles(c *gin.Context) {
@@ -31,8 +63,30 @@ func SearchFiles(c *gin.Context) {
 	var files []models.File
 	var folders []models.Folder
 	
+	// Process wildcard patterns
+	processedQuery, isWildcard := processWildcardQuery(query)
+	
+	// Check if it's an extension pattern like *.pdf
+	extension, isExtensionPattern := isExtensionPattern(query)
+	
+	var searchPattern string
+	if isWildcard {
+		searchPattern = processedQuery
+	} else {
+		searchPattern = "%" + query + "%"
+	}
+	
+	
 	// Search files
-	fileQuery := db.Where("user_id = ? AND name LIKE ?", userID, "%"+query+"%")
+	fileQuery := db.Where("user_id = ?", userID)
+	
+	if isExtensionPattern {
+		// For extension patterns like *.pdf, search by name ending with extension
+		fileQuery = fileQuery.Where("name LIKE ?", "%."+extension)
+	} else {
+		// Regular name search with wildcard support
+		fileQuery = fileQuery.Where("name LIKE ?", searchPattern)
+	}
 	if fileType != "" {
 		switch strings.ToLower(fileType) {
 		case "image":
@@ -59,11 +113,13 @@ func SearchFiles(c *gin.Context) {
 		return
 	}
 	
-	// Search folders
-	if err := db.Where("user_id = ? AND name LIKE ?", userID, "%"+query+"%").
-		Limit(25).Find(&folders).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search folders"})
-		return
+	// Search folders (only if not an extension pattern, since folders don't have extensions)
+	if !isExtensionPattern {
+		folderQuery := db.Where("user_id = ? AND name LIKE ?", userID, searchPattern)
+		if err := folderQuery.Limit(25).Find(&folders).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search folders"})
+			return
+		}
 	}
 	
 	result := SearchResult{

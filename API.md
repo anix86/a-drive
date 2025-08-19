@@ -263,6 +263,174 @@ Create and download a ZIP archive of the folder.
 
 **Response:** ZIP file download.
 
+## Favorites
+
+#### GET /api/favorites
+Get all favorites for the authenticated user.
+
+**Response:**
+```json
+{
+  "favorites": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "item_type": "file",
+      "item_id": 5,
+      "created_at": "2024-01-01T00:00:00Z",
+      "item": {
+        "id": 5,
+        "name": "document.pdf",
+        "is_favorite": true,
+        // ... other file/folder properties
+      }
+    }
+  ]
+}
+```
+
+#### POST /api/favorites
+Add an item to favorites.
+
+**Request:**
+```json
+{
+  "item_type": "file",
+  "item_id": 5
+}
+```
+
+**Response:**
+```json
+{
+  "favorite": {
+    "id": 1,
+    "user_id": 1,
+    "item_type": "file",
+    "item_id": 5,
+    "created_at": "2024-01-01T00:00:00Z"
+  }
+}
+```
+
+#### DELETE /api/favorites/{id}
+Remove a favorite by favorite ID.
+
+**Response:**
+```json
+{
+  "message": "Favorite removed successfully"
+}
+```
+
+#### DELETE /api/favorites/item
+Remove a favorite by item type and ID.
+
+**Request:**
+```json
+{
+  "item_type": "file",
+  "item_id": 5
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Favorite removed successfully"
+}
+```
+
+#### GET /api/favorites/check/{type}/{id}
+Check if an item is favorited.
+
+**Parameters:**
+- `type`: "file" or "folder"
+- `id`: Item ID
+
+**Response:**
+```json
+{
+  "is_favorite": true,
+  "favorite_id": 1
+}
+```
+
+## Recent Files
+
+#### GET /api/recent-files
+Get the 20 most recently accessed files and folders.
+
+**Response:**
+```json
+{
+  "recent_files": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "item_type": "file",
+      "item_id": 5,
+      "accessed_at": "2024-01-01T12:00:00Z",
+      "created_at": "2024-01-01T10:00:00Z",
+      "item": {
+        "id": 5,
+        "name": "document.pdf",
+        // ... other file/folder properties
+      }
+    }
+  ]
+}
+```
+
+#### POST /api/recent-files/track/file/{id}
+Track access to a file.
+
+**Response:**
+```json
+{
+  "message": "Access tracked successfully"
+}
+```
+
+#### POST /api/recent-files/track/folder/{id}
+Track access to a folder.
+
+**Response:**
+```json
+{
+  "message": "Access tracked successfully"
+}
+```
+
+## Photos
+
+#### GET /api/photos
+Get all image files for the authenticated user.
+
+**Response:**
+```json
+{
+  "files": [
+    {
+      "id": 3,
+      "name": "photo.jpg",
+      "original_name": "photo.jpg",
+      "folder_id": null,
+      "user_id": 1,
+      "file_path": "../storage/files/root/1/1_photo.jpg",
+      "size": 1048576,
+      "mime_type": "image/jpeg",
+      "current_version": 1,
+      "versioning_enabled": false,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "is_favorite": false
+    }
+  ],
+  "count": 1
+}
+```
+
 ## Admin Operations
 
 *Requires admin role*

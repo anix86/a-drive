@@ -178,6 +178,13 @@ func bulkMove(db *gorm.DB, userID uint, fileIDs, folderIDs []uint, targetFolderI
 			continue
 		}
 		
+		// Check for circular dependency (moving folder into itself or its descendant)
+		if targetFolderID > 0 && isDescendantOf(db, targetFolderID, folderID) {
+			result.Failed++
+			result.FailedItems = append(result.FailedItems, fmt.Sprintf("%s (circular dependency)", folder.Name))
+			continue
+		}
+		
 		// Update parent_id
 		if targetFolderID == 0 {
 			folder.ParentID = nil // Move to root
@@ -305,4 +312,22 @@ func bulkDownload(c *gin.Context, db *gorm.DB, userID uint, fileIDs, folderIDs [
 	result.Success = true
 	result.Message = fmt.Sprintf("Created ZIP with %d items", result.Processed)
 	return result
+}
+
+// Helper function to check if targetID is a descendant of folderID
+func isDescendantOf(db *gorm.DB, targetID, folderID uint) bool {
+	if targetID == folderID {
+		return true
+	}
+
+	var folder models.Folder
+	if err := db.Where("id = ?", targetID).First(&folder).Error; err != nil {
+		return false
+	}
+
+	if folder.ParentID == nil {
+		return false
+	}
+
+	return isDescendantOf(db, *folder.ParentID, folderID)
 }

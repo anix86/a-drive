@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"strconv"
+	"strings"
 )
 
 type Config struct {
@@ -12,6 +13,9 @@ type Config struct {
 	MaxFileSize    int64
 	AllowedTypes   string
 	Port          string
+	CORSOrigins    string
+	CORSMethods    string
+	CORSHeaders    string
 }
 
 func Load() *Config {
@@ -24,6 +28,9 @@ func Load() *Config {
 		MaxFileSize:   maxSize,
 		AllowedTypes:  getEnv("ALLOWED_FILE_TYPES", "*"),
 		Port:         getEnv("PORT", "8080"),
+		CORSOrigins:   getEnv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001"),
+		CORSMethods:   getEnv("CORS_METHODS", "GET,POST,PUT,DELETE,OPTIONS"),
+		CORSHeaders:   getEnv("CORS_HEADERS", "Origin,Content-Type,Authorization"),
 	}
 }
 
@@ -32,4 +39,31 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+// ParseCSV splits a comma-separated string into a slice
+func (c *Config) ParseCSV(value string) []string {
+	if value == "" {
+		return []string{}
+	}
+	parts := strings.Split(value, ",")
+	for i, part := range parts {
+		parts[i] = strings.TrimSpace(part)
+	}
+	return parts
+}
+
+// GetCORSOrigins returns the CORS origins as a slice
+func (c *Config) GetCORSOrigins() []string {
+	return c.ParseCSV(c.CORSOrigins)
+}
+
+// GetCORSMethods returns the CORS methods as a slice  
+func (c *Config) GetCORSMethods() []string {
+	return c.ParseCSV(c.CORSMethods)
+}
+
+// GetCORSHeaders returns the CORS headers as a slice
+func (c *Config) GetCORSHeaders() []string {
+	return c.ParseCSV(c.CORSHeaders)
 }
